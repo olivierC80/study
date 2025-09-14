@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bibliothèque — Suivi d'exercices</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b1220">
+  <style>
+    :root{--bg:#0b1220;--text:#e5e7eb;--border:#1f2937;--card:#0a1225;--muted:#94a3b8}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0a0f1e,#0b1220 50%,#0a1225);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial}
+    header{padding:1rem 1.1rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:#0a1225cc;backdrop-filter:blur(6px)}
+    h1{margin:.2rem 0 .3rem;font-size:1.35rem}
+    .hint{color:var(--muted);font-size:.95rem}
+    main{padding:1rem 1.1rem;display:grid;gap:1rem;grid-template-columns:1fr}
+    @media(min-width:850px){main{grid-template-columns:repeat(2,1fr)}}
+    @media(min-width:1200px){main{grid-template-columns:repeat(3,1fr)}}
+    .card{background:#0a1225;border:1px solid var(--border);border-radius:1rem;padding:1rem;display:flex;gap:.8rem;align-items:center}
+    .card h2{margin:.2rem 0;font-size:1.05rem}
+    .card p{margin:.2rem 0;color:var(--muted)}
+    a.button{margin-left:auto;border:1px solid var(--border);padding:.5rem .8rem;border-radius:.6rem;color:var(--text);text-decoration:none}
+  </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+    }
+  </script>
+  <script src="library.js" defer></script>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.querySelector('main');
+      const books = window.LIBRARY.books;
+      for(const id in books){
+        const b = books[id];
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<div><h2>'+b.title+'</h2><p>'+b.chapters.length+' chapitres</p></div>';
+        const link = document.createElement('a');
+        link.className='button';
+        link.href = 'book.html?book='+encodeURIComponent(id);
+        link.textContent = 'Ouvrir';
+        card.appendChild(link);
+        container.appendChild(card);
+      }
+    });
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Bibliothèque — Suivi d'exercices</h1>
+    <div class="hint">Choisissez un livre. Tout est enregistré localement sur ce téléphone. Ajoutez cette page à l'écran d'accueil pour un accès direct.</div>
+  </header>
+  <main></main>
+</body>
+</html>
