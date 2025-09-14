@@ -69,15 +69,23 @@
 </main>
 <div class="foot"><span class="hint">Astuce : touchez le numéro de l'exercice pour le copier (appui long).</span></div>
 <script>
-const CONFIG = {
-  storagePrefix: "ellipses-mpsi",
-  title: "Ellipses, Maths MPSI",
-  chapters: [
-    { id: "logique",   name: "Logique et raisonnement",   count: 35, prefix: "1." },
-    { id: "ensembles", name: "Ensembles et applications",  count: 30, prefix: "2." },
-    { id: "complexes", name: "Nombres complexes",          count: 34, prefix: "4." }
-  ]
-};
+<!-- book.html -->
+<script src="library.js?v=20250914-1330"></script>
+<script>
+  function loadConfig() {
+    const bookKey = new URLSearchParams(location.search).get('book') || 'ellipses-mpsi';
+    const lib = (window.LIBRARY && window.LIBRARY.books && window.LIBRARY.books[bookKey]) || null;
+    if (!lib) throw new Error(`Book "${bookKey}" not found in window.LIBRARY`);
+    return {
+      storagePrefix: lib.storagePrefix || bookKey,
+      title: lib.title || bookKey,
+      chapters: Array.isArray(lib.chapters) ? lib.chapters : []
+    };
+  }
+  const CONFIG = loadConfig();
+  // console.log(CONFIG);
+</script>
+
 
 /* state + logic (shortened for brevity, but fully functional) */
 let state = { chapterId: CONFIG.chapters[0].id, rows: [], filter:{done:"all",diffMin:"",diffMax:"",text:"",sortCol:"id",sortDir:"asc"} };
