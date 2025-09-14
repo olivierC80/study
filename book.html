@@ -100,8 +100,19 @@ function applyFilters(rows){ let res=rows.slice(); const f=state.filter;
   if(f.text){ const t=f.text.toLowerCase(); res=res.filter(r=>(r.comment||"").toLowerCase().includes(t)); }
   const dir=f.sortDir==="asc"?1:-1;
   res.sort((a,b)=>{ let va=a[f.sortCol]??"", vb=b[f.sortCol]??""; if(f.sortCol==="difficulty"){va=+va||0; vb=+vb||0;} else if(f.sortCol==="done"){va=a.done?1:0; vb=b.done?1:0;} else if(f.sortCol.startsWith("page")){va=+va||0; vb=+vb||0;}
-    if(f.sortCol==="id"){ const nat=s=> String(s).split(/(\\d+)/).map(x=>(/\\d+/.test(x)?+x:x.toLowerCase())); const A=nat(a.id), B=nat(b.id);
-      for(let i=0;i<Math.max(A.length,B.length);i++){ if(A[i]==null) return -1*dir; if(B[i]==null) return 1*dir; if(A[i]===B[i]) continue; return (A[i]<B[i]?-1:1)*dir; } return 0; }
+    if(f.sortCol==="id"){
+  // natural-ish compare: split numbers
+  const nat = (s)=> String(s).split(/(\d+)/).map(x=> (/\d+/.test(x)? +x : x.toLowerCase()));
+  const A = nat(a.id), B = nat(b.id);
+  for(let i=0;i<Math.max(A.length,B.length);i++){
+    if(A[i]==null) return -1*dir;
+    if(B[i]==null) return  1*dir;
+    if(A[i]===B[i]) continue;
+    return (A[i]<B[i]? -1: 1) * dir;
+  }
+  return 0;
+}
+
     if(va<vb) return -1*dir; if(va>vb) return 1*dir; return 0; });
   return res;
 }
