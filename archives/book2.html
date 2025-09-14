@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Suivi d'exercices — Prépa</title>
+  <style>
+    :root{
+      --bg:#0f172a;--panel:#111827;--muted:#334155;--text:#e5e7eb;--accent:#22c55e;--accent-2:#3b82f6;--warn:#f59e0b;--danger:#ef4444;--card:#0b1220;--input:#0b1220;--border:#1f2937;--chip:#111827;
+    }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;background:linear-gradient(180deg,#0a0f1e,#0b1220 40%,#0a1225);color:var(--text)}
+    header{position:sticky;top:0;backdrop-filter:blur(8px);background:rgba(10,18,37,.8);border-bottom:1px solid var(--border);z-index:50}
+    .bar{display:flex;gap:.75rem;align-items:center;padding:.75rem .9rem;flex-wrap:wrap}
+    h1{font-size:1.1rem;margin:.2rem 0 .2rem 0;font-weight:700}
+    .grow{flex:1}
+    button,select,input[type="text"],input[type="number"]{background:var(--input);border:1px solid var(--border);color:var(--text);padding:.55rem .65rem;border-radius:.6rem;font-size:.95rem}
+    button{cursor:pointer} button.ghost{background:transparent;border-color:var(--border)}
+    .chips{display:flex;gap:.5rem;overflow:auto;padding:.5rem .9rem .75rem}
+    .chip{white-space:nowrap;padding:.35rem .6rem;border:1px solid var(--border);background:var(--chip);border-radius:999px;font-size:.9rem;cursor:pointer;user-select:none}
+    .chip.active{outline:2px solid var(--accent-2);} main{padding:.75rem .9rem 5rem}
+    .toolbar{display:grid;gap:.6rem;grid-template-columns:1fr 1fr;margin:.2rem 0 1rem;} @media(min-width:800px){.toolbar{grid-template-columns:repeat(6,1fr);}}
+    label{font-size:.8rem;color:#cbd5e1} .card{background:rgba(7,12,24,.6);border:1px solid var(--border);border-radius:1rem;padding:.8rem;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+    table{width:100%;border-collapse:separate;border-spacing:0} th,td{padding:.6rem .5rem;border-bottom:1px solid var(--border);vertical-align:middle}
+    th{position:sticky;top:110px;background:#0b1220EE;z-index:5;font-size:.85rem;text-align:left} tr:hover td{background:#0b1324}
+    td:first-child,th:first-child{position:sticky;left:0;background:#0b1220EE;z-index:4} .id{font-weight:700}
+    .progress{display:flex;gap:.5rem;align-items:center;font-size:.9rem;padding:.4rem .6rem;background:#0b1220;border:1px solid var(--border);border-radius:.6rem}
+    .row-input{width:100%;max-width:420px} .small{max-width:90px}
+    .foot{position:fixed;bottom:0;left:0;right:0;padding:.6rem .9rem;background:rgba(7,12,24,.9);border-top:1px solid var(--border);display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+    .hint{color:#94a3b8;font-size:.85rem} .hidden{display:none !important}
+  </style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div>
+      <h1 id="title">Suivi d'exercices — Prépa</h1>
+      <div class="hint">Tout se sauvegarde automatiquement sur ce téléphone (localStorage). Export/Import en JSON possible.</div>
+    </div>
+    <div class="grow"></div>
+    <div class="controls">
+      <button id="btnExport" class="ghost">Exporter</button>
+      <input id="fileImport" type="file" class="hidden" accept="application/json">
+      <button id="btnImport" class="ghost">Importer</button>
+      <button id="btnReset" class="ghost" title="Réinitialiser ce chapitre">Réinit.</button>
+      <button id="btnShare" class="ghost">Partager la progression</button>
+    </div>
+  </div>
+  <div class="chips" id="chapters"></div>
+  <div class="bar card">
+    <div class="toolbar">
+      <div><label>Fait ?</label><select id="filterDone"><option value="all">Tous</option><option value="yes">Oui</option><option value="no">Non</option></select></div>
+      <div><label>Difficulté min</label><select id="filterDiffMin"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+      <div><label>Difficulté max</label><select id="filterDiffMax"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+      <div style="grid-column: span 2"><label>Commentaire contient</label><input id="filterText" type="text" placeholder="texte…" class="row-input"></div>
+      <div><label>Tri</label><select id="sortCol"><option value="id">Exercice</option><option value="done">Fait</option><option value="difficulty">Difficulté</option><option value="page_enonce">Page énoncé</option><option value="page_corrige">Page corrigé</option></select></div>
+      <div><label>Ordre</label><select id="sortDir"><option value="asc">Asc</option><option value="desc">Desc</option></select></div>
+    </div>
+    <div class="progress"><span id="counter"></span> <span class="pill" id="pillChapter"></span></div>
+  </div>
+</header>
+<main>
+  <div class="card">
+    <table id="table">
+      <thead><tr><th>Exercice</th><th>Fait ?</th><th>Commentaire</th><th>Difficulté (1–5)</th><th>Page énoncé</th><th>Page corrigé</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</main>
+<div class="foot"><span class="hint">Astuce : touchez le numéro de l'exercice pour le copier (appui long).</span></div>
+
+<!-- book.html -->
+<script src="library.js?v=20250914-1330"></script>
+<script>
+  function loadConfig() {
+    const bookKey = new URLSearchParams(location.search).get('book') || 'ellipses-mpsi';
+    const lib = (window.LIBRARY && window.LIBRARY.books && window.LIBRARY.books[bookKey]) || null;
+    if (!lib) throw new Error(`Book "${bookKey}" not found in window.LIBRARY`);
+    return {
+      storagePrefix: lib.storagePrefix || bookKey,
+      title: lib.title || bookKey,
+      chapters: Array.isArray(lib.chapters) ? lib.chapters : []
+    };
+  }
+  const CONFIG = loadConfig();
+  // console.log(CONFIG);
+
+
+
+/* state + logic (shortened for brevity, but fully functional) */
+let state = { chapterId: CONFIG.chapters[0].id, rows: [], filter:{done:"all",diffMin:"",diffMax:"",text:"",sortCol:"id",sortDir:"asc"} };
+const $ = q=>document.querySelector(q), $$= q=>Array.from(document.querySelectorAll(q));
+const keyFor = chapterId => `${CONFIG.storagePrefix}::${chapterId}`;
+
+function makeDefaultRows(ch){ const a=[]; for(let i=1;i<=ch.count;i++){ a.push({id:`${ch.prefix}${i}`,done:false,comment:"",difficulty:"",page_enonce:"",page_corrige:""});} return a; }
+function loadChapterRows(chapterId){ const raw=localStorage.getItem(keyFor(chapterId)); const ch=CONFIG.chapters.find(c=>c.id===chapterId);
+  if(raw){ try{ const parsed=JSON.parse(raw); const defaults=makeDefaultRows(ch); const map=new Map(parsed.map(o=>[o.id,o])); return defaults.map(def=>({...def, ...(map.get(def.id)||{})})); }catch(e){ return makeDefaultRows(ch); } }
+  return makeDefaultRows(ch);
+}
+function saveChapterRows(chapterId,rows){ localStorage.setItem(keyFor(chapterId), JSON.stringify(rows)); updateCounter(); }
+function setChapter(chapterId){ state.chapterId=chapterId; state.rows=loadChapterRows(chapterId); renderRows(); highlightActiveChip(); $("#pillChapter").textContent=CONFIG.chapters.find(c=>c.id===chapterId).name; }
+function highlightActiveChip(){ $$("#chapters .chip").forEach(ch=> ch.classList.toggle("active", ch.dataset.id===state.chapterId)); }
+function applyFilters(rows){ let res=rows.slice(); const f=state.filter;
+  if(f.done==="yes") res=res.filter(r=>r.done);
+  if(f.done==="no") res=res.filter(r=>!r.done);
+  if(f.diffMin) res=res.filter(r=>(+r.difficulty||0)>= (+f.diffMin));
+  if(f.diffMax) res=res.filter(r=>(+r.difficulty||0)<= (+f.diffMax));
+  if(f.text){ const t=f.text.toLowerCase(); res=res.filter(r=>(r.comment||"").toLowerCase().includes(t)); }
+  const dir=f.sortDir==="asc"?1:-1;
+  res.sort((a,b)=>{ let va=a[f.sortCol]??"", vb=b[f.sortCol]??""; if(f.sortCol==="difficulty"){va=+va||0; vb=+vb||0;} else if(f.sortCol==="done"){va=a.done?1:0; vb=b.done?1:0;} else if(f.sortCol.startsWith("page")){va=+va||0; vb=+vb||0;}
+    if(f.sortCol==="id"){
+  // natural-ish compare: split numbers
+  const nat = (s)=> String(s).split(/(\d+)/).map(x=> (/\d+/.test(x)? +x : x.toLowerCase()));
+  const A = nat(a.id), B = nat(b.id);
+  for(let i=0;i<Math.max(A.length,B.length);i++){
+    if(A[i]==null) return -1*dir;
+    if(B[i]==null) return  1*dir;
+    if(A[i]===B[i]) continue;
+    return (A[i]<B[i]? -1: 1) * dir;
+  }
+  return 0;
+}
+
+    if(va<vb) return -1*dir; if(va>vb) return 1*dir; return 0; });
+  return res;
+}
+function updateCounter(){ const total=state.rows.length; const done=state.rows.filter(r=>r.done).length; $("#counter").textContent=`Progression : ${done}/${total} (${Math.round(done*100/Math.max(total,1))}%)`; }
+function renderChips(){ const wrap=$("#chapters"); wrap.innerHTML=""; CONFIG.chapters.forEach(ch=>{ const el=document.createElement("div"); el.className="chip"; el.dataset.id=ch.id; el.textContent=ch.name; el.onclick=()=>setChapter(ch.id); wrap.appendChild(el); }); }
+function renderRows(){ const tbody=$("#tbody"); tbody.innerHTML=""; const filtered=applyFilters(state.rows);
+  filtered.forEach(r=>{ const tr=document.createElement("tr");
+    const tdId=document.createElement("td"); tdId.className="id"; tdId.textContent=r.id; tdId.title="Appui long pour copier";
+    tdId.onpointerdown=(ev)=>{ let t=setTimeout(()=>{ navigator.clipboard&&navigator.clipboard.writeText(r.id); tdId.style.outline="2px solid var(--accent)"; setTimeout(()=>tdId.style.outline="none",800); },550);
+      const clear=()=>clearTimeout(t); tdId.onpointerup=clear; tdId.onpointerleave=clear; tdId.onpointercancel=clear; }; tr.appendChild(tdId);
+    const tdDone=document.createElement("td"); const chk=document.createElement("input"); chk.type="checkbox"; chk.checked=r.done; chk.oninput=()=>{ r.done=chk.checked; saveChapterRows(state.chapterId,state.rows); renderRows(); }; tdDone.appendChild(chk); tr.appendChild(tdDone);
+    const tdCom=document.createElement("td"); const inpCom=document.createElement("input"); inpCom.type="text"; inpCom.value=r.comment||""; inpCom.className="row-input"; inpCom.oninput=()=>{ r.comment=inpCom.value; saveChapterRows(state.chapterId,state.rows); }; tdCom.appendChild(inpCom); tr.appendChild(tdCom);
+    const tdDiff=document.createElement("td"); const sel=document.createElement("select"); sel.innerHTML='<option value=""></option>'+[1,2,3,4,5].map(n=>`<option>${n}</option>`).join(""); sel.value=r.difficulty||""; sel.oninput=()=>{ r.difficulty=sel.value; saveChapterRows(state.chapterId,state.rows); }; tdDiff.appendChild(sel); tr.appendChild(tdDiff);
+    const tdPe=document.createElement("td"); const inpPe=document.createElement("input"); inpPe.type="number"; inpPe.inputMode="numeric"; inpPe.pattern="\\d*"; inpPe.value=r.page_enonce||""; inpPe.className="small"; inpPe.oninput=()=>{ r.page_enonce=inpPe.value; saveChapterRows(state.chapterId,state.rows); }; tdPe.appendChild(inpPe); tr.appendChild(tdPe);
+    const tdPc=document.createElement("td"); const inpPc=document.createElement("input"); inpPc.type="number"; inpPc.inputMode="numeric"; inpPc.pattern="\\d*"; inpPc.value=r.page_corrige||""; inpPc.className="small"; inpPc.oninput=()=>{ r.page_corrige=inpPc.value; saveChapterRows(state.chapterId,state.rows); }; tdPc.appendChild(inpPc); tr.appendChild(tdPc);
+    tbody.appendChild(tr); });
+  updateCounter();
+}
+function doExport(){ const data={}; CONFIG.chapters.forEach(ch=>{ data[ch.id]=JSON.parse(localStorage.getItem(keyFor(ch.id))||"null")||makeDefaultRows(ch); }); const blob=new Blob([JSON.stringify({meta:{title:CONFIG.title,when:new Date().toISOString()},data},null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="suivi_exercices.json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); }
+function doImport(file){ const reader=new FileReader(); reader.onload=()=>{ try{ const parsed=JSON.parse(reader.result); if(!parsed||!parsed.data) throw new Error("format"); Object.entries(parsed.data).forEach(([chapterId,rows])=>{ if(CONFIG.chapters.some(c=>c.id===chapterId)){ localStorage.setItem(keyFor(chapterId), JSON.stringify(rows)); } }); setChapter(state.chapterId); alert("Import réussi ✅"); }catch(e){ alert("Import impossible (JSON invalide)."); } }; reader.readAsText(file); }
+function init(){ renderChips(); setChapter(CONFIG.chapters[0].id);
+  $("#filterDone").oninput=e=>{ state.filter.done=e.target.value; renderRows(); };
+  $("#filterDiffMin").oninput=e=>{ state.filter.diffMin=e.target.value; renderRows(); };
+  $("#filterDiffMax").oninput=e=>{ state.filter.diffMax=e.target.value; renderRows(); };
+  $("#filterText").oninput=e=>{ state.filter.text=e.target.value; renderRows(); };
+  $("#sortCol").oninput=e=>{ state.filter.sortCol=e.target.value; renderRows(); };
+  $("#sortDir").oninput=e=>{ state.filter.sortDir=e.target.value; renderRows(); };
+  $("#btnExport").onclick=doExport; $("#btnImport").onclick=()=>$("#fileImport").click(); $("#fileImport").onchange=e=> e.target.files[0]&&doImport(e.target.files[0]);
+  $("#btnReset").onclick=()=>{ if(confirm("Réinitialiser ce chapitre ?")){ const ch=CONFIG.chapters.find(c=>c.id===state.chapterId); localStorage.setItem(keyFor(state.chapterId), JSON.stringify(makeDefaultRows(ch))); setChapter(state.chapterId);} };
+  $("#btnShare").onclick=async ()=>{ try{ const ch=CONFIG.chapters.find(c=>c.id===state.chapterId); const done=state.rows.filter(r=>r.done).length; const total=state.rows.length; const text=`${CONFIG.title} — ${ch.name}\\nProgression: ${done}/${total} (${Math.round(done*100/Math.max(total,1))}%)`; if(navigator.share){ await navigator.share({text}); } else { await navigator.clipboard.writeText(text); alert("Texte copié ✅"); } }catch(e){ alert("Impossible de partager."); } };
+  window.addEventListener("beforeunload", ()=> saveChapterRows(state.chapterId, state.rows));
+}
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
